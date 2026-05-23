@@ -83,6 +83,13 @@
       margin-top: 2px;
     }
 
+    .gesture-hint {
+      font-size: 0.625rem;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.45;
+    }
+
     .panel {
       background: var(--bg);
       border: 1px solid var(--border);
@@ -365,6 +372,7 @@
       <div class="controls-header">
         <h1>Pixel Illustrator</h1>
         <p>For Tiny Wins icons</p>
+        <p class="gesture-hint">iPad: 2-finger tap undo · 3-finger tap redo</p>
       </div>
 
       <section class="panel" aria-label="Artboard size">
@@ -671,6 +679,59 @@
       updateCanvasCursor();
     }
 
+    const GESTURE_TAP_MS = 280;
+    const GESTURE_MOVE_PX = 24;
+    let fingerGesture = null;
+
+    function onTouchStart(e) {
+      const count = e.touches.length;
+      if (count === 2 || count === 3) {
+        if (drawing) onPointerUp();
+        fingerGesture = {
+          count,
+          startTime: Date.now(),
+          maxMove: 0,
+          starts: Array.from(e.touches).map((t) => ({ x: t.clientX, y: t.clientY })),
+        };
+        e.preventDefault();
+        return;
+      }
+      if (count === 1 && !fingerGesture) onPointerDown(e);
+    }
+
+    function onTouchMove(e) {
+      if (fingerGesture) {
+        for (let i = 0; i < e.touches.length; i++) {
+          const start = fingerGesture.starts[i];
+          if (!start) continue;
+          const dx = e.touches[i].clientX - start.x;
+          const dy = e.touches[i].clientY - start.y;
+          fingerGesture.maxMove = Math.max(fingerGesture.maxMove, Math.hypot(dx, dy));
+        }
+        if (fingerGesture.maxMove > GESTURE_MOVE_PX) fingerGesture = null;
+        e.preventDefault();
+        return;
+      }
+      onPointerMove(e);
+    }
+
+    function onTouchEnd(e) {
+      if (fingerGesture) {
+        if (e.touches.length === 0) {
+          const g = fingerGesture;
+          fingerGesture = null;
+          const elapsed = Date.now() - g.startTime;
+          if (elapsed <= GESTURE_TAP_MS && g.maxMove <= GESTURE_MOVE_PX) {
+            if (g.count === 2) undo();
+            else if (g.count === 3) redo();
+          }
+        }
+        e.preventDefault();
+        return;
+      }
+      if (e.touches.length === 0) onPointerUp();
+    }
+
     function exportPng() {
       const out = document.createElement("canvas");
       out.width = gridSize;
@@ -847,9 +908,10 @@
     displayCanvas.addEventListener("mousemove", onPointerMove);
     window.addEventListener("mouseup", onPointerUp);
 
-    displayCanvas.addEventListener("touchstart", onPointerDown, { passive: false });
-    displayCanvas.addEventListener("touchmove", onPointerMove, { passive: false });
-    window.addEventListener("touchend", onPointerUp);
+    displayCanvas.addEventListener("touchstart", onTouchStart, { passive: false });
+    displayCanvas.addEventListener("touchmove", onTouchMove, { passive: false });
+    displayCanvas.addEventListener("touchend", onTouchEnd, { passive: false });
+    displayCanvas.addEventListener("touchcancel", onTouchEnd, { passive: false });
 
     render();
   </script>
