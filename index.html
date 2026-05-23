@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Pixel Illustrator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --surface: #fff;
+      --text: #0e0e0e;
+      --muted: #999;
+      --border: #e8e9eb;
+      --accent: #0e0e0e;
+      --accent-soft: #e8e9eb;
+      --danger: #dc2626;
+      --radius: 10px;
+      --zoom: 16;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Space Grotesk", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .workspace {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .artboard-area {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      touch-action: none;
+    }
+
+    .controls {
+      width: min(300px, 42vw);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+      border-left: 1px solid var(--border);
+      background: var(--surface);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .controls-header {
+      padding-bottom: 4px;
+    }
+
+    .controls-header h1 {
+      font-size: 1.0625rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .controls-header p {
+      font-size: 0.6875rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .panel {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      flex-shrink: 0;
+    }
+
+    .panel-label {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .size-group {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .size-btn {
+      flex: 1;
+      min-height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .size-btn[aria-pressed="true"],
+    .mirror-btn[aria-pressed="true"] {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .mirror-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .mirror-btn {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .color-row {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      width: 100%;
+    }
+
+    #colorPicker {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      background: none;
+    }
+
+    #colorPicker::-webkit-color-swatch-wrapper { padding: 4px; }
+    #colorPicker::-webkit-color-swatch { border: none; border-radius: 4px; }
+    #colorPicker::-moz-color-swatch { border: none; border-radius: 4px; }
+
+    .swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.08);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .swatch[aria-pressed="true"] {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .tool-btn {
+      min-width: 44px;
+      height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      font-family: inherit;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .tool-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .tool-btn[aria-pressed="true"] {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .tool-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      flex: 1;
+      min-width: 0;
+    }
+
+    .thickness-group {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .thickness-btn {
+      flex: 1;
+      min-width: 0;
+      height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+    }
+
+    .thickness-btn[aria-pressed="true"] {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .thickness-btn[aria-pressed="true"] .brush-preview {
+      background: #fff;
+    }
+
+    .brush-preview {
+      background: var(--text);
+      border-radius: 1px;
+      image-rendering: pixelated;
+    }
+
+    .canvas-frame {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      max-width: 100%;
+      max-height: 100%;
+      line-height: 0;
+    }
+
+    .checker {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(45deg, #e0e1e3 25%, transparent 25%),
+        linear-gradient(-45deg, #e0e1e3 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e0e1e3 75%),
+        linear-gradient(-45deg, transparent 75%, #e0e1e3 75%);
+      background-size: 12px 12px;
+      background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+      background-color: #fff;
+    }
+
+    #displayCanvas {
+      position: relative;
+      display: block;
+      max-width: 100%;
+      max-height: calc(100dvh - 40px);
+      width: auto;
+      height: auto;
+      image-rendering: pixelated;
+      cursor: crosshair;
+    }
+
+    #displayCanvas.mode-move {
+      cursor: grab;
+    }
+
+    #displayCanvas.mode-move.dragging {
+      cursor: grabbing;
+    }
+
+    .mode-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .brush-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .eraser-full {
+      width: 100%;
+    }
+
+    .tools-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .tools-bottom .tool-btn.primary {
+      grid-column: 1 / -1;
+    }
+
+    .export-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .export-group .tool-btn.full {
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <section class="artboard-area" aria-label="Artboard">
+      <div class="canvas-frame">
+        <div class="checker" aria-hidden="true"></div>
+        <canvas id="displayCanvas" aria-label="Pixel canvas"></canvas>
+      </div>
+    </section>
+
+    <aside class="controls" aria-label="Controls">
+      <div class="controls-header">
+        <h1>Pixel Illustrator</h1>
+        <p>For Tiny Wins icons</p>
+      </div>
+
+      <section class="panel" aria-label="Artboard size">
+        <div class="panel-label">Artboard</div>
+        <div class="size-group" role="group" aria-label="Pixel dimensions">
+          <button type="button" class="size-btn" data-size="24" aria-pressed="true">24</button>
+          <button type="button" class="size-btn" data-size="20" aria-pressed="false">20</button>
+          <button type="button" class="size-btn" data-size="16" aria-pressed="false">16</button>
+          <button type="button" class="size-btn" data-size="12" aria-pressed="false">12</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Mirror">
+        <div class="panel-label">Mirror</div>
+        <div class="mirror-group" role="group" aria-label="Mirror axis">
+          <button type="button" class="mirror-btn" data-mirror="off" aria-pressed="true">Off</button>
+          <button type="button" class="mirror-btn" data-mirror="horizontal" aria-pressed="false">Horizontal</button>
+          <button type="button" class="mirror-btn" data-mirror="vertical" aria-pressed="false">Vertical</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Color">
+        <div class="panel-label">Color</div>
+        <div class="color-row">
+          <input type="color" id="colorPicker" value="#0e0e0e" aria-label="Color picker" />
+          <div class="swatches" id="swatches" role="group" aria-label="Preset colors"></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Tools">
+        <div class="panel-label">Brush</div>
+        <div class="brush-row">
+          <div class="thickness-group" role="group" aria-label="Brush thickness">
+            <button type="button" class="thickness-btn" data-thickness="1" aria-pressed="true" aria-label="1 pixel">
+              <span class="brush-preview" style="width:4px;height:4px;"></span>
+            </button>
+            <button type="button" class="thickness-btn" data-thickness="2" aria-pressed="false" aria-label="2 pixels">
+              <span class="brush-preview" style="width:8px;height:8px;"></span>
+            </button>
+            <button type="button" class="thickness-btn" data-thickness="3" aria-pressed="false" aria-label="3 pixels">
+              <span class="brush-preview" style="width:12px;height:12px;"></span>
+            </button>
+            <button type="button" class="thickness-btn" data-thickness="4" aria-pressed="false" aria-label="4 pixels">
+              <span class="brush-preview" style="width:16px;height:16px;"></span>
+            </button>
+          </div>
+          <div class="mode-row">
+            <button type="button" class="tool-btn" id="eraserBtn" aria-pressed="false">Eraser</button>
+            <button type="button" class="tool-btn" id="moveBtn" aria-pressed="false">Move</button>
+          </div>
+        </div>
+        <div class="tools-bottom" style="margin-top: 10px;">
+          <button type="button" class="tool-btn" id="undoBtn" disabled>Undo</button>
+          <button type="button" class="tool-btn" id="redoBtn" disabled>Redo</button>
+          <button type="button" class="tool-btn" id="clearBtn">Clear</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Export">
+        <div class="panel-label">Export</div>
+        <div class="export-group">
+          <button type="button" class="tool-btn primary" id="exportPngBtn">PNG</button>
+          <button type="button" class="tool-btn primary" id="exportSvgBtn">SVG</button>
+          <button type="button" class="tool-btn full" id="copySvgBtn">Copy SVG</button>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    const SIZES = [24, 20, 16, 12];
+    const ZOOM = 16;
+    const MAX_UNDO = 50;
+
+    const SWATCHES = [
+      "#0e0e0e", "#ffffff",
+      "#7c3aed", "#2563eb", "#16a34a", "#ea580c", "#ca8a04", "#db2777",
+      "#999999", "#e8e9eb",
+    ];
+
+    let gridSize = 24;
+    let pixels = createGrid(24);
+    let color = "#0e0e0e";
+    let thickness = 1;
+    let eraser = false;
+    let toolMode = "brush";
+    let mirrorMode = "off";
+    let drawing = false;
+    let strokeSaved = false;
+    let shiftStart = null;
+    let shiftSnapshot = null;
+    const undoStack = [];
+    const redoStack = [];
+
+    const displayCanvas = document.getElementById("displayCanvas");
+    const dctx = displayCanvas.getContext("2d");
+    const colorPicker = document.getElementById("colorPicker");
+    const swatchesEl = document.getElementById("swatches");
+    const undoBtn = document.getElementById("undoBtn");
+    const redoBtn = document.getElementById("redoBtn");
+
+    function createGrid(n) {
+      return Array.from({ length: n }, () => Array(n).fill(null));
+    }
+
+    function cloneGrid(g) {
+      return g.map((row) => row.slice());
+    }
+
+    function gridHasPixels(g) {
+      return g.some((row) => row.some((c) => c !== null));
+    }
+
+    function updateHistoryButtons() {
+      undoBtn.disabled = undoStack.length === 0;
+      redoBtn.disabled = redoStack.length === 0;
+    }
+
+    function pushUndo() {
+      undoStack.push(cloneGrid(pixels));
+      if (undoStack.length > MAX_UNDO) undoStack.shift();
+      redoStack.length = 0;
+      updateHistoryButtons();
+    }
+
+    function undo() {
+      if (!undoStack.length) return;
+      redoStack.push(cloneGrid(pixels));
+      pixels = undoStack.pop();
+      updateHistoryButtons();
+      render();
+    }
+
+    function redo() {
+      if (!redoStack.length) return;
+      undoStack.push(cloneGrid(pixels));
+      pixels = redoStack.pop();
+      updateHistoryButtons();
+      render();
+    }
+
+    function setSize(n) {
+      gridSize = n;
+      pixels = createGrid(n);
+      undoStack.length = 0;
+      redoStack.length = 0;
+      updateHistoryButtons();
+      render();
+      document.querySelectorAll(".size-btn").forEach((btn) => {
+        btn.setAttribute("aria-pressed", btn.dataset.size === String(n));
+      });
+    }
+
+    function shiftGrid(grid, dx, dy) {
+      const next = createGrid(gridSize);
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const c = grid[y][x];
+          if (!c) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize) {
+            next[ny][nx] = c;
+          }
+        }
+      }
+      return next;
+    }
+
+    function setToolMode(mode) {
+      toolMode = mode;
+      if (mode === "move") eraser = false;
+      displayCanvas.classList.toggle("mode-move", mode === "move");
+      document.getElementById("moveBtn").setAttribute("aria-pressed", String(mode === "move"));
+      document.getElementById("eraserBtn").setAttribute("aria-pressed", String(eraser));
+    }
+
+    function updateCanvasCursor() {
+      displayCanvas.classList.toggle("dragging", drawing && toolMode === "move");
+    }
+
+    function mirrorCoord(v) {
+      return gridSize - 1 - v;
+    }
+
+    function brushAnchors(gx, gy) {
+      const anchors = [[gx, gy]];
+      if (mirrorMode === "horizontal") anchors.push([mirrorCoord(gx), gy]);
+      if (mirrorMode === "vertical") anchors.push([gx, mirrorCoord(gy)]);
+      const seen = new Set();
+      return anchors.filter(([ax, ay]) => {
+        const key = `${ax},${ay}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function paintBrush(gx, gy) {
+      const half = Math.floor((thickness - 1) / 2);
+      const value = eraser ? null : color;
+      for (const [anchorX, anchorY] of brushAnchors(gx, gy)) {
+        for (let dy = 0; dy < thickness; dy++) {
+          for (let dx = 0; dx < thickness; dx++) {
+            const x = anchorX - half + dx;
+            const y = anchorY - half + dy;
+            if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+              pixels[y][x] = value;
+            }
+          }
+        }
+      }
+    }
+
+    function drawMirrorGuide(px) {
+      if (mirrorMode === "off") return;
+      const center = (gridSize / 2) * ZOOM;
+      dctx.save();
+      dctx.strokeStyle = "rgba(124, 58, 237, 0.6)";
+      dctx.lineWidth = 2;
+      dctx.setLineDash([6, 4]);
+      dctx.beginPath();
+      if (mirrorMode === "horizontal") {
+        dctx.moveTo(center, 0);
+        dctx.lineTo(center, px);
+      } else {
+        dctx.moveTo(0, center);
+        dctx.lineTo(px, center);
+      }
+      dctx.stroke();
+      dctx.restore();
+    }
+
+    function render() {
+      const px = gridSize * ZOOM;
+      displayCanvas.width = px;
+      displayCanvas.height = px;
+      dctx.clearRect(0, 0, px, px);
+
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const c = pixels[y][x];
+          if (!c) continue;
+          dctx.fillStyle = c;
+          dctx.fillRect(x * ZOOM, y * ZOOM, ZOOM, ZOOM);
+        }
+      }
+
+      drawMirrorGuide(px);
+    }
+
+    function coordsFromEvent(e) {
+      const rect = displayCanvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const x = Math.floor(((clientX - rect.left) / rect.width) * gridSize);
+      const y = Math.floor(((clientY - rect.top) / rect.height) * gridSize);
+      return {
+        x: Math.max(0, Math.min(gridSize - 1, x)),
+        y: Math.max(0, Math.min(gridSize - 1, y)),
+      };
+    }
+
+    function onPointerDown(e) {
+      e.preventDefault();
+      if (!strokeSaved) {
+        pushUndo();
+        strokeSaved = true;
+      }
+      drawing = true;
+      updateCanvasCursor();
+      const { x, y } = coordsFromEvent(e);
+
+      if (toolMode === "move") {
+        shiftStart = { x, y };
+        shiftSnapshot = cloneGrid(pixels);
+        return;
+      }
+
+      paintBrush(x, y);
+      render();
+    }
+
+    function onPointerMove(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      const { x, y } = coordsFromEvent(e);
+
+      if (toolMode === "move") {
+        pixels = shiftGrid(shiftSnapshot, x - shiftStart.x, y - shiftStart.y);
+        render();
+        return;
+      }
+
+      paintBrush(x, y);
+      render();
+    }
+
+    function onPointerUp() {
+      drawing = false;
+      strokeSaved = false;
+      shiftStart = null;
+      shiftSnapshot = null;
+      updateCanvasCursor();
+    }
+
+    function exportPng() {
+      const out = document.createElement("canvas");
+      out.width = gridSize;
+      out.height = gridSize;
+      const ctx = out.getContext("2d");
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const c = pixels[y][x];
+          if (c) {
+            ctx.fillStyle = c;
+            ctx.fillRect(x, y, 1, 1);
+          }
+        }
+      }
+      out.toBlob((blob) => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `pixel-${gridSize}x${gridSize}.png`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      }, "image/png");
+    }
+
+    function gridToSvg() {
+      const rects = [];
+      for (let y = 0; y < gridSize; y++) {
+        let x = 0;
+        while (x < gridSize) {
+          const c = pixels[y][x];
+          if (!c) {
+            x++;
+            continue;
+          }
+          let w = 1;
+          while (x + w < gridSize && pixels[y][x + w] === c) w++;
+          rects.push(`  <rect x="${x}" y="${y}" width="${w}" height="1" fill="${c}"/>`);
+          x += w;
+        }
+      }
+      if (!rects.length) return null;
+      return [
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${gridSize} ${gridSize}" width="${gridSize}" height="${gridSize}" shape-rendering="crispEdges">`,
+        ...rects,
+        `</svg>`,
+      ].join("\n");
+    }
+
+    function downloadText(filename, text, mime) {
+      const blob = new Blob([text], { type: mime });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function exportSvg() {
+      const svg = gridToSvg();
+      if (!svg) {
+        alert("Nothing to export — draw something first.");
+        return;
+      }
+      downloadText(`pixel-${gridSize}x${gridSize}.svg`, svg, "image/svg+xml");
+    }
+
+    async function copySvg() {
+      const svg = gridToSvg();
+      if (!svg) {
+        alert("Nothing to copy — draw something first.");
+        return;
+      }
+      const btn = document.getElementById("copySvgBtn");
+      try {
+        await navigator.clipboard.writeText(svg);
+        const prev = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = prev; }, 1200);
+      } catch {
+        alert("Couldn't copy — try Export SVG instead.");
+      }
+    }
+
+    SWATCHES.forEach((hex, i) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "swatch";
+      btn.style.background = hex;
+      btn.setAttribute("aria-label", hex);
+      btn.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+      btn.addEventListener("click", () => {
+        color = hex;
+        setToolMode("brush");
+        colorPicker.value = hex;
+        document.querySelectorAll(".swatch").forEach((s) => s.setAttribute("aria-pressed", "false"));
+        btn.setAttribute("aria-pressed", "true");
+      });
+      swatchesEl.appendChild(btn);
+    });
+
+    colorPicker.addEventListener("input", (e) => {
+      color = e.target.value;
+      setToolMode("brush");
+      document.querySelectorAll(".swatch").forEach((s) => s.setAttribute("aria-pressed", "false"));
+    });
+
+    document.querySelectorAll(".size-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const next = Number(btn.dataset.size);
+        if (next === gridSize) return;
+        if (gridHasPixels(pixels) && !confirm(`Switch to ${next}×${next}? This clears the canvas.`)) return;
+        setSize(next);
+      });
+    });
+
+    document.querySelectorAll(".mirror-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        mirrorMode = btn.dataset.mirror;
+        document.querySelectorAll(".mirror-btn").forEach((b) => {
+          b.setAttribute("aria-pressed", b === btn);
+        });
+        render();
+      });
+    });
+
+    document.querySelectorAll(".thickness-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        thickness = Number(btn.dataset.thickness);
+        document.querySelectorAll(".thickness-btn").forEach((b) => {
+          b.setAttribute("aria-pressed", b === btn);
+        });
+      });
+    });
+
+    document.getElementById("eraserBtn").addEventListener("click", (e) => {
+      if (toolMode === "move") setToolMode("brush");
+      eraser = !eraser;
+      e.currentTarget.setAttribute("aria-pressed", String(eraser));
+      if (eraser) document.getElementById("moveBtn").setAttribute("aria-pressed", "false");
+    });
+
+    document.getElementById("moveBtn").addEventListener("click", (e) => {
+      const next = toolMode === "move" ? "brush" : "move";
+      setToolMode(next);
+      if (next === "move") {
+        eraser = false;
+        document.getElementById("eraserBtn").setAttribute("aria-pressed", "false");
+      }
+      e.currentTarget.setAttribute("aria-pressed", String(next === "move"));
+    });
+
+    document.getElementById("undoBtn").addEventListener("click", undo);
+    document.getElementById("redoBtn").addEventListener("click", redo);
+
+    document.addEventListener("keydown", (e) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod || e.key.toLowerCase() !== "z") return;
+      e.preventDefault();
+      if (e.shiftKey) redo();
+      else undo();
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (gridHasPixels(pixels) && !confirm("Clear the whole canvas?")) return;
+      pushUndo();
+      pixels = createGrid(gridSize);
+      render();
+    });
+
+    document.getElementById("exportPngBtn").addEventListener("click", exportPng);
+    document.getElementById("exportSvgBtn").addEventListener("click", exportSvg);
+    document.getElementById("copySvgBtn").addEventListener("click", copySvg);
+
+    displayCanvas.addEventListener("mousedown", onPointerDown);
+    displayCanvas.addEventListener("mousemove", onPointerMove);
+    window.addEventListener("mouseup", onPointerUp);
+
+    displayCanvas.addEventListener("touchstart", onPointerDown, { passive: false });
+    displayCanvas.addEventListener("touchmove", onPointerMove, { passive: false });
+    window.addEventListener("touchend", onPointerUp);
+
+    render();
+  </script>
+</body>
+</html>
